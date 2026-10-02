@@ -71,12 +71,18 @@ class InstagramExtractor(BaseExtractor):
     ) -> ExtractionResult:
         embed_url = f"https://www.instagram.com/p/{shortcode}/embed/captioned/"
         headers = {
-            "User-Agent": self.config.user_agent,
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.9",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Upgrade-Insecure-Requests": "1"
         }
 
-        resp = requests.get(embed_url, headers=headers, timeout=self.config.timeout_seconds)
+        session = requests.Session()
+        session.headers.update(headers)
+        resp = session.get(embed_url, timeout=self.config.timeout_seconds)
         resp.raise_for_status()
 
         m = re.search(r'"contextJSON"\s*:\s*"({.+?})"\s*[,}\]]', resp.text)

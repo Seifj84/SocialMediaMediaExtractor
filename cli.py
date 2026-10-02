@@ -20,7 +20,7 @@ from media_extractor.utils.logger import log_info, log_success, log_error, log_w
 from media_extractor.utils.file_utils import format_bytes
 
 
-console = Console()
+console = Console(highlight=False, legacy_windows=False)
 
 
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
@@ -90,8 +90,8 @@ def main(url, output_dir, media_filter, quality, subfolder, open_folder, gui, st
     manager = ExtractorManager(config)
 
     with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
+        TextColumn("[cyan]{task.description}"),
+        BarColumn(),
         console=console,
     ) as progress:
         task = progress.add_task("[cyan]Processing link and extracting media...", total=100)
@@ -126,10 +126,10 @@ def main(url, output_dir, media_filter, quality, subfolder, open_folder, gui, st
 
         console.print(table)
         console.print(f"\n[bold green]SUCCESS:[/bold green] Exported {len(result.downloaded_files)} file(s) ({format_bytes(total_bytes)}) to:")
-        console.print(f"📁 [bold underline]{result.target_dir}[/bold underline]")
+        console.print(f"Directory: [bold underline]{result.target_dir}[/bold underline]")
 
         if result.metadata_file:
-            console.print(f"📄 Metadata saved: [dim]{result.metadata_file}[/dim]")
+            console.print(f"Metadata: [dim]{result.metadata_file}[/dim]")
 
         if open_folder:
             open_in_explorer(result.target_dir)
