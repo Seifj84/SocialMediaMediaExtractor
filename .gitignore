@@ -1,0 +1,118 @@
+# ==============================================================================
+# Git Ignore Rules for Social Media Media Extractor
+# ==============================================================================
+
+# User media directories and explicit exclusions
+panganidistrictcouncil/
+panganidistrictcouncil/**
+downloads/
+downloads/**
+output/
+output/**
+media_output/
+media_output/**
+downloaded_media/
+downloaded_media/**
+
+# Direct media file extensions (protects root and subdirectories from downloaded media)
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.gif
+*.bmp
+*.tiff
+*.svg.tmp
+
+# Video file extensions
+*.mp4
+*.mkv
+*.webm
+*.mov
+*.avi
+*.flv
+*.ts
+*.m4v
+
+# Audio file extensions
+*.mp3
+*.m4a
+*.wav
+*.aac
+*.flac
+*.ogg
+*.opus
+
+# Temporary / Incomplete download files
+*.part
+*.ytdl
+*.aria2
+*.tmp
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Packaging / Distribution
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Testing & Coverage
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+htmlcov/
+
+# Local configs, secrets & tokens
+.env
+.env.*
+!.env.example
+credentials.json
+cookies.txt
+tokens.json
+config.user.json
+*.session
+
+# Editor & OS files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+desktop.ini

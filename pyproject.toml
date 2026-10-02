@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omni-media-extractor"
+version = "1.0.0"
+authors = [
+    { name = "Seif Juma", email = "seifj84@gmail.com" }
+]
+description = "Universal Social Media Media Extractor - High-quality photo, audio, and video downloader with GUI and CLI."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+keywords = ["media-downloader", "social-media", "instagram", "tiktok", "youtube", "twitter", "reddit", "photos", "audio"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Multimedia :: Sound/Audio"
+]
+dependencies = [
+    "yt-dlp>=2024.8.0",
+    "gallery-dl>=1.27.0",
+    "requests>=2.31.0",
+    "Pillow>=10.2.0",
+    "imageio-ffmpeg>=0.5.1",
+    "PySide6>=6.6.0",
+    "rich>=13.7.0",
+    "click>=8.1.7"
+]
+
+[project.optional-dependencies]
+web = ["streamlit>=1.35.0"]
+dev = ["pytest>=8.0.0"]
+
+[project.scripts]
+omni-media = "cli:main"
+omni-media-gui = "app:main"
+
+[project.urls]
+"Homepage" = "https://github.com/Seifj84/SocialMediaMediaExtractor"
+"Bug Tracker" = "https://github.com/Seifj84/SocialMediaMediaExtractor/issues"

@@ -1,0 +1,12 @@
+# Universal Social Media Media Extractor Dependencies
+yt-dlp>=2024.8.0
+gallery-dl>=1.27.0
+requests>=2.31.0
+urllib3>=2.0.0
+Pillow>=10.2.0
+imageio-ffmpeg>=0.5.1
+PySide6>=6.6.0
+rich>=13.7.0
+click>=8.1.7
+streamlit>=1.35.0
+pytest>=8.0.0
