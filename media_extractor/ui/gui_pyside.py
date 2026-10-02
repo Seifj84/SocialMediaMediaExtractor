@@ -232,14 +232,22 @@ class OmniMediaMainWindow(QMainWindow):
         opt_layout.addWidget(self.qual_combo)
 
         # Checkboxes
-        self.subfolder_check = QCheckBox("Organize in Author Subfolder")
-        self.subfolder_check.setChecked(self.config.create_author_subfolder)
+        self.activity_folder_check = QCheckBox("Name folder after Activity & Date")
+        self.activity_folder_check.setChecked(self.config.organize_by_activity)
         self.jpg_convert_check = QCheckBox("Convert WebP to JPG")
         self.jpg_convert_check.setChecked(self.config.convert_webp_to_jpg)
 
-        opt_layout.addWidget(self.subfolder_check)
+        opt_layout.addWidget(self.activity_folder_check)
         opt_layout.addWidget(self.jpg_convert_check)
         main_layout.addWidget(opt_group)
+
+        # Optional Activity Name Box
+        act_group = QGroupBox("4. Activity Name (Optional Custom Override)")
+        act_layout = QHBoxLayout(act_group)
+        self.activity_input = QLineEdit()
+        self.activity_input.setPlaceholderText("Leave blank to auto-detect from caption (e.g. Mkutano wa Jukwa la NGOs Mkoa Tanga - Date)")
+        act_layout.addWidget(self.activity_input)
+        main_layout.addWidget(act_group)
 
         # 4. Action Button
         self.download_btn = QPushButton("Extract & Download Media")
@@ -311,8 +319,10 @@ class OmniMediaMainWindow(QMainWindow):
 
         os.makedirs(destination, exist_ok=True)
 
-        self.config.create_author_subfolder = self.subfolder_check.isChecked()
+        self.config.organize_by_activity = self.activity_folder_check.isChecked()
         self.config.convert_webp_to_jpg = self.jpg_convert_check.isChecked()
+        custom_act = self.activity_input.text().strip()
+        self.config.custom_folder_name = custom_act if custom_act else None
 
         filter_enum = self.filter_combo.currentData()
         quality_enum = self.qual_combo.currentData()
@@ -349,10 +359,14 @@ class OmniMediaMainWindow(QMainWindow):
         if result.success and result.downloaded_files:
             self.last_destination = result.target_dir
             self.log(f"\n[SUCCESS] Extracted {len(result.downloaded_files)} file(s) from {result.platform}!")
+            if result.activity_name:
+                self.log(f"Activity: {result.activity_name}")
             self.log(f"Saved into: {result.target_dir}")
             for fpath in result.downloaded_files:
                 sz = format_bytes(os.path.getsize(fpath)) if os.path.exists(fpath) else ""
                 self.log(f"  - {os.path.basename(fpath)} ({sz})")
+            if result.post_content_file:
+                self.log(f"  - post_content.txt saved")
             if result.metadata_file:
                 self.log(f"  - metadata.json saved")
             QMessageBox.information(

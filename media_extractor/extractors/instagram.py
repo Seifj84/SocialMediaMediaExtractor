@@ -15,8 +15,10 @@ import io
 
 from .base import BaseExtractor, ProgressCallback
 from ..core.models import ExtractionResult, MediaItem, MediaType, MediaFilter, MediaQuality
-from ..core.ffmpeg_finder import ensure_ffmpeg_in_path, find_ffmpeg
-from ..utils.file_utils import sanitize_filename, convert_image_to_jpg, ensure_unique_filepath
+from ..utils.file_utils import (
+    sanitize_filename, convert_image_to_jpg, ensure_unique_filepath,
+    resolve_activity_folder, extract_activity_name, format_post_date, write_post_content_txt
+)
 from ..utils.logger import log_info, log_success, log_warning, log_error, log_progress
 
 
@@ -102,8 +104,21 @@ class InstagramExtractor(BaseExtractor):
         caption_edges = gql.get("edge_media_to_caption", {}).get("edges", [])
         caption = caption_edges[0]["node"]["text"] if caption_edges else ""
 
+        timestamp = gql.get("taken_at_timestamp")
+        date_str = format_post_date(timestamp)
+        activity_name = extract_activity_name(caption, title=f"Post by @{username}", fallback=username)
+
         # Determine target directory
-        if self.config.create_author_subfolder:
+        if self.config.organize_by_activity:
+            target_dir = resolve_activity_folder(
+                base_output_dir=output_dir,
+                caption=caption,
+                title=activity_name,
+                fallback_author=username,
+                date_raw=timestamp,
+                custom_folder_name=getattr(self.config, 'custom_folder_name', None)
+            )
+        elif self.config.create_author_subfolder:
             target_dir = os.path.join(output_dir, sanitize_filename(username))
         else:
             target_dir = output_dir
@@ -123,7 +138,9 @@ class InstagramExtractor(BaseExtractor):
             author=username,
             author_id=owner.get("id"),
             title=f"Instagram post by @{username}",
+            activity_name=activity_name,
             caption=caption,
+            upload_date=date_str,
             target_dir=target_dir,
             success=True,
         )
@@ -217,6 +234,21 @@ class InstagramExtractor(BaseExtractor):
             )
             result.media_items.append(item)
             time.sleep(0.15)
+
+        # Write post_content.txt
+        if self.config.save_post_content_txt:
+            txt_path = write_post_content_txt(
+                target_dir=target_dir,
+                title=activity_name,
+                author=username,
+                platform="Instagram",
+                url=url,
+                date_str=date_str,
+                caption=caption,
+                downloaded_files=result.downloaded_files
+            )
+            result.post_content_file = txt_path
+            result.downloaded_files.append(txt_path)
 
         # Write metadata.json
         if self.config.save_metadata_json:

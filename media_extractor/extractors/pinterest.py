@@ -14,7 +14,11 @@ import yt_dlp
 from .base import BaseExtractor, ProgressCallback
 from ..core.models import ExtractionResult, MediaItem, MediaType, MediaFilter, MediaQuality
 from ..core.ffmpeg_finder import ensure_ffmpeg_in_path, find_ffmpeg
-from ..utils.file_utils import sanitize_filename, ensure_unique_filepath
+from ..utils.file_utils import (
+    sanitize_filename, ensure_unique_filepath,
+    resolve_activity_folder, extract_activity_name,
+    format_post_date, write_post_content_txt
+)
 from ..utils.logger import log_info, log_success, log_warning, log_error
 
 
@@ -59,9 +63,19 @@ class PinterestExtractor(BaseExtractor):
 
         # Attempt high-res image extraction from HTML
         soup = BeautifulSoup(r.text, "html.parser")
-        title = sanitize_filename(soup.title.string if soup.title else f"Pinterest_Pin_{pin_id}")
+        raw_title = soup.title.string.strip() if (soup.title and soup.title.string) else f"Pinterest_Pin_{pin_id}"
+        date_str = format_post_date()
+        activity_name = extract_activity_name(title=raw_title, fallback=f"Pinterest_Pin_{pin_id}")
 
-        if self.config.create_author_subfolder:
+        if self.config.organize_by_activity:
+            target_dir = resolve_activity_folder(
+                base_output_dir=output_dir,
+                title=activity_name,
+                fallback_author="Pinterest",
+                date_raw=date_str,
+                custom_folder_name=getattr(self.config, 'custom_folder_name', None)
+            )
+        elif self.config.create_author_subfolder:
             target_dir = os.path.join(output_dir, "Pinterest")
         else:
             target_dir = output_dir
@@ -113,13 +127,31 @@ class PinterestExtractor(BaseExtractor):
             except Exception:
                 pass
 
+        # Write post_content.txt
+        txt_path = None
+        if self.config.save_post_content_txt and downloaded_files:
+            txt_path = write_post_content_txt(
+                target_dir=target_dir,
+                title=activity_name,
+                author=author,
+                platform="Pinterest",
+                url=url,
+                date_str=date_str,
+                caption=raw_title,
+                downloaded_files=downloaded_files
+            )
+            downloaded_files.append(txt_path)
+
         result = ExtractionResult(
             platform="Pinterest",
             source_url=url,
             author=author,
-            title=title,
+            title=raw_title,
+            activity_name=activity_name,
+            upload_date=date_str,
             target_dir=target_dir,
             downloaded_files=downloaded_files,
+            post_content_file=txt_path,
             success=len(downloaded_files) > 0,
         )
 

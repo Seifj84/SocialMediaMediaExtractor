@@ -94,6 +94,11 @@ def run_web_app():
                 value=config.default_output_dir,
                 help="Choose where files should be stored on your computer."
             )
+            custom_activity = st.text_input(
+                "🏷️ Activity / Folder Name (Optional Override)",
+                placeholder="Leave blank for auto-detection (e.g. Mkutano wa Jukwa la NGOs Mkoa Tanga - Date)",
+                help="Override the automatically detected event/activity name."
+            )
 
         with col_opt:
             media_filter = st.selectbox(
@@ -107,9 +112,9 @@ def run_web_app():
                 index=0
             )
 
-        col_sub, col_jpg = st.columns(2)
-        with col_sub:
-            subfolder = st.checkbox("Organize in author subfolder", value=config.create_author_subfolder)
+        col_act, col_jpg = st.columns(2)
+        with col_act:
+            organize_act = st.checkbox("Name folder after activity & date", value=config.organize_by_activity)
         with col_jpg:
             convert_jpg = st.checkbox("Convert WebP images to JPG", value=config.convert_webp_to_jpg)
 
@@ -130,9 +135,10 @@ def run_web_app():
             if not url.strip():
                 st.error("Please enter a valid social media URL.")
             else:
-                config.create_author_subfolder = subfolder
+                config.organize_by_activity = organize_act
                 config.convert_webp_to_jpg = convert_jpg
                 config.default_output_dir = output_dir
+                config.custom_folder_name = custom_activity.strip() if custom_activity.strip() else None
                 save_config(config)
 
                 os.makedirs(output_dir, exist_ok=True)
@@ -155,11 +161,25 @@ def run_web_app():
 
                 if result.success and result.downloaded_files:
                     st.success(f"🎉 Successfully extracted {len(result.downloaded_files)} file(s) into: `{result.target_dir}`")
+                    if result.activity_name:
+                        st.info(f"🏷️ **Detected Activity:** {result.activity_name}")
 
                     btn_col1, btn_col2 = st.columns([1, 4])
                     with btn_col1:
                         if st.button("📂 Open Output Folder"):
                             open_in_explorer(result.target_dir)
+
+                    if result.post_content_file and os.path.exists(result.post_content_file):
+                        with st.expander("📝 View Post Content (.txt)", expanded=True):
+                            with open(result.post_content_file, "r", encoding="utf-8") as pf:
+                                post_txt = pf.read()
+                                st.text_area("Post Content & Summary", value=post_txt, height=220)
+                                st.download_button(
+                                    "⬇️ Download post_content.txt",
+                                    data=post_txt,
+                                    file_name="post_content.txt",
+                                    mime="text/plain"
+                                )
 
                     st.subheader("Downloaded Files:")
                     for fp in result.downloaded_files:

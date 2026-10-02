@@ -33,13 +33,15 @@ console = Console(highlight=False, legacy_windows=False)
 @click.option("--gui", is_flag=True, help="Launch Desktop Graphical User Interface (PySide6).")
 @click.option("--status", is_flag=True, help="Display system diagnostics (FFmpeg status, default directories).")
 @click.option("--history", is_flag=True, help="Display past extraction audit logs, successes, and failures.")
-def main(url, output_dir, media_filter, quality, subfolder, open_folder, gui, status, history):
+@click.option("-a", "--activity", help="Custom activity / event name for folder and metadata (auto-detected if omitted).", type=str, default=None)
+def main(url, output_dir, media_filter, quality, subfolder, open_folder, gui, status, history, activity):
     """
     OmniMedia Extractor - Download high-quality media from social media links.
 
     Examples:\n
       omni-media "https://www.instagram.com/p/DdoWS1KCGwA/" -o "D:/MyPhotos"\n
       omni-media "https://youtu.be/dQw4w9WgXcQ" -f audio -o "D:/Music"\n
+      omni-media "https://instagram.com/p/..." -a "Mkutano wa Jukwa la NGOs Mkoa Tanga"\n
       omni-media --history\n
       omni-media --gui
     """
@@ -80,15 +82,23 @@ def main(url, output_dir, media_filter, quality, subfolder, open_folder, gui, st
 
     if subfolder is not None:
         config.create_author_subfolder = subfolder
+    if activity:
+        config.custom_folder_name = activity
 
     filter_enum = MediaFilter(media_filter.lower())
     quality_enum = MediaQuality(quality.lower())
 
-    console.print(Panel(
+    panel_text = (
         f"[bold]Target URL:[/bold] {url}\n"
         f"[bold]Output Folder:[/bold] {output_dir}\n"
         f"[bold]Media Filter:[/bold] {filter_enum.value.capitalize()}\n"
-        f"[bold]Quality:[/bold] {quality_enum.value.capitalize()}",
+        f"[bold]Quality:[/bold] {quality_enum.value.capitalize()}"
+    )
+    if activity:
+        panel_text += f"\n[bold]Activity Name:[/bold] {activity}"
+
+    console.print(Panel(
+        panel_text,
         title="[bold green]Download Configuration[/bold green]",
         border_style="green"
     ))
@@ -133,6 +143,9 @@ def main(url, output_dir, media_filter, quality, subfolder, open_folder, gui, st
         console.print(table)
         console.print(f"\n[bold green]SUCCESS:[/bold green] Exported {len(result.downloaded_files)} file(s) ({format_bytes(total_bytes)}) to:")
         console.print(f"Directory: [bold underline]{result.target_dir}[/bold underline]")
+
+        if result.post_content_file:
+            console.print(f"Content TXT: [dim]{result.post_content_file}[/dim]")
 
         if result.metadata_file:
             console.print(f"Metadata: [dim]{result.metadata_file}[/dim]")

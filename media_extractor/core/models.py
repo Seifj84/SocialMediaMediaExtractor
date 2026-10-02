@@ -71,11 +71,13 @@ class ExtractionResult:
     author: str = "unknown"
     author_id: Optional[str] = None
     title: str = ""
+    activity_name: str = ""
     caption: str = ""
     upload_date: Optional[str] = None
     media_items: List[MediaItem] = field(default_factory=list)
     target_dir: str = ""
     metadata_file: Optional[str] = None
+    post_content_file: Optional[str] = None
     success: bool = True
     error_message: Optional[str] = None
     downloaded_files: List[str] = field(default_factory=list)
@@ -95,11 +97,13 @@ class ExtractionResult:
             "author": self.author,
             "author_id": self.author_id,
             "title": self.title,
+            "activity_name": self.activity_name,
             "caption": self.caption,
             "upload_date": self.upload_date,
             "total_items": self.total_items,
             "target_dir": self.target_dir,
             "metadata_file": self.metadata_file,
+            "post_content_file": self.post_content_file,
             "success": self.success,
             "error_message": self.error_message,
             "downloaded_files": self.downloaded_files,

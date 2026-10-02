@@ -13,7 +13,11 @@ import requests
 from .base import BaseExtractor, ProgressCallback
 from ..core.models import ExtractionResult, MediaItem, MediaType, MediaFilter, MediaQuality
 from ..core.ffmpeg_finder import ensure_ffmpeg_in_path, find_ffmpeg
-from ..utils.file_utils import sanitize_filename, ensure_unique_filepath
+from ..utils.file_utils import (
+    sanitize_filename, ensure_unique_filepath,
+    resolve_activity_folder, extract_activity_name,
+    format_post_date, write_post_content_txt
+)
 from ..utils.logger import log_info, log_success, log_warning, log_error
 
 
@@ -57,10 +61,23 @@ class RedditExtractor(BaseExtractor):
                 data = r.json()
                 post = data[0]["data"]["children"][0]["data"]
                 author = sanitize_filename(post.get("author") or "reddit_user")
-                title = sanitize_filename(post.get("title") or "Reddit_Post")
+                raw_title = post.get("title") or "Reddit_Post"
+                raw_desc = post.get("selftext") or ""
+                created_utc = post.get("created_utc")
+                date_str = format_post_date(created_utc)
+                activity_name = extract_activity_name(caption=raw_desc, title=raw_title, fallback=author)
                 subreddit = post.get("subreddit") or ""
 
-                if self.config.create_author_subfolder:
+                if self.config.organize_by_activity:
+                    target_dir = resolve_activity_folder(
+                        base_output_dir=output_dir,
+                        caption=raw_desc,
+                        title=activity_name,
+                        fallback_author=author,
+                        date_raw=created_utc,
+                        custom_folder_name=getattr(self.config, 'custom_folder_name', None)
+                    )
+                elif self.config.create_author_subfolder:
                     target_dir = os.path.join(output_dir, f"r_{subreddit}_{author}")
                 else:
                     target_dir = output_dir
@@ -74,7 +91,6 @@ class RedditExtractor(BaseExtractor):
                         if item_info.get("status") != "valid":
                             continue
                         ext = item_info.get("m", "image/jpg").split("/")[-1]
-                        # Best image url
                         s = item_info.get("s", {})
                         img_url = s.get("u") or s.get("gif")
                         if not img_url:
@@ -90,14 +106,32 @@ class RedditExtractor(BaseExtractor):
                             downloaded_files.append(save_path)
 
                     if downloaded_files:
+                        # Write post_content.txt
+                        txt_path = None
+                        if self.config.save_post_content_txt:
+                            txt_path = write_post_content_txt(
+                                target_dir=target_dir,
+                                title=activity_name,
+                                author=author,
+                                platform="Reddit",
+                                url=url,
+                                date_str=date_str,
+                                caption=raw_desc,
+                                downloaded_files=downloaded_files
+                            )
+                            downloaded_files.append(txt_path)
+
                         res = ExtractionResult(
                             platform="Reddit",
                             source_url=url,
                             author=author,
-                            title=title,
-                            caption=post.get("selftext") or "",
+                            title=raw_title,
+                            activity_name=activity_name,
+                            caption=raw_desc,
+                            upload_date=date_str,
                             target_dir=target_dir,
                             downloaded_files=downloaded_files,
+                            post_content_file=txt_path,
                             success=True
                         )
                         if self.config.save_metadata_json:

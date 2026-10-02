@@ -24,6 +24,9 @@ class Config:
     default_filter: MediaFilter = MediaFilter.ALL
     default_quality: MediaQuality = MediaQuality.BEST
     create_author_subfolder: bool = True
+    organize_by_activity: bool = True
+    save_post_content_txt: bool = True
+    custom_folder_name: Optional[str] = None
     save_metadata_json: bool = True
     convert_webp_to_jpg: bool = True
     jpg_quality: int = 95
