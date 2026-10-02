@@ -3,6 +3,7 @@ Extractor Manager and Registry.
 Matches social media URLs to the appropriate dedicated extractor and coordinates extraction.
 """
 
+import time
 from typing import List, Optional, Callable
 from .base import BaseExtractor, ProgressCallback
 from .instagram import InstagramExtractor
@@ -59,9 +60,13 @@ class ExtractorManager:
         """
         clean_url = url.strip()
         destination = output_dir or self.config.default_output_dir
+        start_time = time.time()
 
         extractor = self.get_extractor(clean_url)
         log_info(f"Routed URL to extractor: [bold]{extractor.platform_name}[/bold]")
+
+        from ..core.history import get_history_tracker
+        tracker = get_history_tracker()
 
         try:
             result = extractor.extract(
@@ -71,13 +76,18 @@ class ExtractorManager:
                 quality=quality,
                 progress_cb=progress_cb,
             )
+            duration = time.time() - start_time
+            tracker.record(result, media_filter=media_filter, quality=quality, duration_seconds=duration)
             return result
         except Exception as e:
             log_error(f"Extraction failed: {e}")
-            return ExtractionResult(
+            duration = time.time() - start_time
+            failed_res = ExtractionResult(
                 platform=extractor.platform_name,
                 source_url=clean_url,
                 target_dir=destination,
                 success=False,
                 error_message=str(e),
             )
+            tracker.record(failed_res, media_filter=media_filter, quality=quality, duration_seconds=duration)
+            return failed_res

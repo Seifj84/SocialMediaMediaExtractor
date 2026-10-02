@@ -32,13 +32,15 @@ console = Console(highlight=False, legacy_windows=False)
 @click.option("--open-folder", is_flag=True, help="Open destination folder in Explorer after completion.")
 @click.option("--gui", is_flag=True, help="Launch Desktop Graphical User Interface (PySide6).")
 @click.option("--status", is_flag=True, help="Display system diagnostics (FFmpeg status, default directories).")
-def main(url, output_dir, media_filter, quality, subfolder, open_folder, gui, status):
+@click.option("--history", is_flag=True, help="Display past extraction audit logs, successes, and failures.")
+def main(url, output_dir, media_filter, quality, subfolder, open_folder, gui, status, history):
     """
     OmniMedia Extractor - Download high-quality media from social media links.
 
     Examples:\n
       omni-media "https://www.instagram.com/p/DdoWS1KCGwA/" -o "D:/MyPhotos"\n
       omni-media "https://youtu.be/dQw4w9WgXcQ" -f audio -o "D:/Music"\n
+      omni-media --history\n
       omni-media --gui
     """
     config = get_config()
@@ -50,6 +52,10 @@ def main(url, output_dir, media_filter, quality, subfolder, open_folder, gui, st
 
     if status:
         show_status(config)
+        return
+
+    if history:
+        show_history()
         return
 
     if not url:
@@ -155,6 +161,62 @@ def show_status(config):
     t.add_row("FFmpeg Binary Path", ffmpeg or "Not found")
     t.add_row("FFmpeg Version", version or "Unknown")
     console.print(t)
+
+
+def show_history():
+    """Displays past extraction history, successes, and failures."""
+    from media_extractor.core.history import get_history_tracker
+    tracker = get_history_tracker()
+    stats = tracker.get_stats()
+    records = tracker.get_all()
+
+    # KPI summary table
+    summary = Table(title="OmniMedia Audit Summary", show_header=True, header_style="bold magenta")
+    summary.add_column("Total Runs", justify="center")
+    summary.add_column("Successes", justify="center", style="green")
+    summary.add_column("Failures", justify="center", style="red")
+    summary.add_column("Success Rate", justify="center", style="cyan")
+    summary.add_column("Total Files", justify="center")
+    summary.add_column("Total Data", justify="center", style="yellow")
+
+    summary.add_row(
+        str(stats["total_runs"]),
+        str(stats["success_count"]),
+        str(stats["failed_count"]),
+        f"{stats['success_rate_percent']}%",
+        str(stats["total_files_downloaded"]),
+        format_bytes(stats["total_bytes_downloaded"]),
+    )
+    console.print(summary)
+    console.print("")
+
+    if not records:
+        console.print("[dim]No extraction events logged yet.[/dim]")
+        return
+
+    hist_table = Table(title=f"Recent Extractions (Last {min(len(records), 25)})", show_header=True, header_style="bold cyan")
+    hist_table.add_column("Status", justify="center")
+    hist_table.add_column("Timestamp", style="dim")
+    hist_table.add_column("Platform", style="bold")
+    hist_table.add_column("Files", justify="right")
+    hist_table.add_column("Duration", justify="right")
+    hist_table.add_column("Details", style="white")
+
+    for r in records[:25]:
+        st_val = r.get("status", "UNKNOWN")
+        st_styled = f"[green]SUCCESS[/green]" if st_val == "SUCCESS" else (f"[red]FAILED[/red]" if st_val == "FAILED" else f"[yellow]{st_val}[/yellow]")
+        detail = r.get("error_message") or r.get("url", "")
+        if len(detail) > 60:
+            detail = detail[:57] + "..."
+        hist_table.add_row(
+            st_styled,
+            r.get("timestamp", ""),
+            r.get("platform", ""),
+            str(r.get("total_files", 0)),
+            f"{r.get('duration_seconds', 0)}s",
+            detail,
+        )
+    console.print(hist_table)
 
 
 def open_in_explorer(path: str):

@@ -98,7 +98,7 @@ coverage.xml
 .pytest_cache/
 htmlcov/
 
-# Local configs, secrets & tokens
+# Local configs, secrets, logs & tokens
 .env
 .env.*
 !.env.example
@@ -107,6 +107,10 @@ cookies.txt
 tokens.json
 config.user.json
 *.session
+logs/
+logs/**
+*.log
+history.json
 
 # Editor & OS files
 .vscode/
